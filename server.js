@@ -171,7 +171,6 @@ async function getAfishaWithCache(city) {
         console.log('Redis недоступен');
     }
 
-    // 2. Пробуем получить из MongoDB
     try {
         const oneHourAgo = new Date(Date.now() - 3600000); // 1 час назад
         console.log('🔍 Ищем в MongoDB для города:', cityNormalized);
@@ -192,7 +191,6 @@ async function getAfishaWithCache(city) {
                 description: e.description
             }));
 
-            // Сохраняем в Redis на будущее
             try {
                 await redisClient.setEx(`afisha:${cityNormalized}`, CACHE_TTL, JSON.stringify(events));
                 console.log('✅ Данные сохранены в Redis');
@@ -206,38 +204,36 @@ async function getAfishaWithCache(city) {
         console.log('❌ MongoDB недоступен:', error.message);
     }
 
-    // 3. Парсим новые данные
-    console.log('🔄 Парсим новые данные для города:', cityNormalized);
+
+    console.log('Парсим новые данные для города:', cityNormalized);
     const events = await parseYandexAfisha(city);
 
-    // Сохраняем в MongoDB
     try {
-        console.log('💾 Сохраняем в MongoDB:', events.length, 'событий');
+        console.log('Сохраняем в MongoDB:', events.length, 'событий');
         await Event.deleteMany({city: cityNormalized}); // Удаляем старые
 
         const eventsToSave = events.map(event => ({
             ...event,
-            city: cityNormalized, // Сохраняем с нормализованным городом
-            createdAt: new Date() // Явно указываем дату
+            city: cityNormalized,
+            createdAt: new Date()
         }));
 
         await Event.insertMany(eventsToSave);
-        console.log('✅ Данные успешно сохранены в MongoDB');
+        console.log('Данные успешно сохранены в MongoDB');
 
         // Проверим что сохранилось
         const savedCount = await Event.countDocuments({city: cityNormalized});
-        console.log('📊 Проверка: в MongoDB теперь', savedCount, 'событий для', cityNormalized);
+        console.log('Проверка: в MongoDB теперь', savedCount, 'событий для', cityNormalized);
 
     } catch (error) {
-        console.log('❌ Не удалось сохранить в MongoDB:', error.message);
+        console.log('Не удалось сохранить в MongoDB:', error.message);
     }
 
-    // Сохраняем в Redis
     try {
         await redisClient.setEx(`afisha:${cityNormalized}`, CACHE_TTL, JSON.stringify(events));
-        console.log('✅ Данные сохранены в Redis');
+        console.log('Данные сохранены в Redis');
     } catch (error) {
-        console.log('❌ Не удалось сохранить в Redis:', error.message);
+        console.log('Не удалось сохранить в Redis:', error.message);
     }
 
     return events;
