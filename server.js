@@ -158,9 +158,9 @@ function getFallbackEvents(city) {
 
 async function getAfishaWithCache(city) {
     const CACHE_TTL = 3600; // 1 час
-    const cityNormalized = city.toLowerCase(); // Нормализуем город
+    const cityNormalized = city.toLowerCase();
 
-    // 1. Пробуем получить из Redis
+
     try {
         const cached = await redisClient.get(`afisha:${cityNormalized}`);
         if (cached) {
@@ -172,11 +172,11 @@ async function getAfishaWithCache(city) {
     }
 
     try {
-        const oneHourAgo = new Date(Date.now() - 3600000); // 1 час назад
+        const oneHourAgo = new Date(Date.now() - 3600000);
         console.log('🔍 Ищем в MongoDB для города:', cityNormalized);
 
         const cachedEvents = await Event.find({
-            city: cityNormalized, // Используем нормализованный город
+            city: cityNormalized,
             createdAt: {$gt: oneHourAgo}
         }).limit(10);
 
@@ -210,7 +210,7 @@ async function getAfishaWithCache(city) {
 
     try {
         console.log('Сохраняем в MongoDB:', events.length, 'событий');
-        await Event.deleteMany({city: cityNormalized}); // Удаляем старые
+        await Event.deleteMany({city: cityNormalized});
 
         const eventsToSave = events.map(event => ({
             ...event,
@@ -221,7 +221,7 @@ async function getAfishaWithCache(city) {
         await Event.insertMany(eventsToSave);
         console.log('Данные успешно сохранены в MongoDB');
 
-        // Проверим что сохранилось
+
         const savedCount = await Event.countDocuments({city: cityNormalized});
         console.log('Проверка: в MongoDB теперь', savedCount, 'событий для', cityNormalized);
 
@@ -271,7 +271,7 @@ async function startServer() {
     // const httpsServer = https.createServer(sslOptions, app);
     //
     // httpsServer.listen(PORT, () => {
-    //     console.log(`TTPS сервер запущен на https://localhost:${PORT}`);
+    //     console.log(`TTPS сервер запущен на https://localhost:${PORT}`);1
     // });
 
     app.listen(PORT || 30000)
