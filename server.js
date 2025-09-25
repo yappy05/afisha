@@ -276,8 +276,8 @@ app.get('/api/parser', async (req, res) => {
         const page = await browser.newPage();
 
         // Устанавливаем реалистичные таймауты
-        await page.setDefaultNavigationTimeout(30000);
-        await page.setDefaultTimeout(10000);
+        await page.setDefaultNavigationTimeout(70000);
+        await page.setDefaultTimeout(40000);
 
         // Блокируем ненужные ресурсы для ускорения
         await page.setRequestInterception(true);
@@ -290,13 +290,13 @@ app.get('/api/parser', async (req, res) => {
             }
         });
 
-        const url = 'https://afisha.timepad.ru/saint-petersburg/events';
+        const url = 'https://afisha.timepad.ru/saint-petersburg/events?date=2025-09-25T20%3A21%3A53%2B03%3A00%2C2025-09-25T23%3A59%3A59%2B03%3A00';
         console.log('Пытаемся загрузить:', url);
 
         // Пробуем более простое ожидание
         await page.goto(url, {
             waitUntil: 'domcontentloaded', // Быстрее чем networkidle
-            timeout: 20000
+            timeout: 40000
         });
 
         console.log('Страница загружена, ищем элемент...');
@@ -304,23 +304,48 @@ app.get('/api/parser', async (req, res) => {
         // Ждем элемент с коротким таймаутом
         try {
             await page.waitForSelector('.lpage.lflexchild--stretched', {
-                timeout: 5000
+                timeout: 25000
             });
         } catch (e) {
             console.log('Элемент не найден, но продолжаем...');
         }
 
+        try {
+            await page.waitForSelector('h2.ctypography.ctypography--regular.ctypography--no-padding.ctypography__body.tmultiline.tmultiline-3.t-color-black', {
+                timeout: 35000
+            });
+            await p
+        } catch (e) {
+            console.log('H2 элементы не найдены за 5 секунд, продолжаем...');
+        }
+
+        const h2Elements = await page.evaluate(() => {
+            const elements = document.querySelectorAll('h2.ctypography.ctypography--regular.ctypography--no-padding.ctypography__body.tmultiline.tmultiline-3.t-color-black');
+
+            return Array.from(elements).map((h2, index) => {
+                return {
+                    id: index + 1,
+                    text: h2.textContent.trim(),
+                    html: h2.innerHTML,
+                    outerHTML: h2.outerHTML
+                };
+            });
+        });
+
         // Все равно пытаемся получить элемент
-        const divContent = await page.evaluate(() => {
-            const div = document.querySelector('.lpage.lflexchild--stretched');
+        const button = await page.evaluate(() => {
+            const div = document.querySelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
             return div ? div.outerHTML : 'Элемент не найден, но страница загружена';
         });
+        // await page.click('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
 
         await browser.close();
 
         res.json({
             success: true,
-            content: divContent
+            button: button,
+            elementsCount: h2Elements.length,
+            elements: h2Elements
         });
 
     } catch (error) {
