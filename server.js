@@ -326,7 +326,7 @@ app.get('/api/parser', async (req, res) => {
         //     const div = document.querySelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
         //     return div ? div.outerHTML : 'Элемент не найден, но страница загружена';
         // });
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 2; i++) {
             try {
                 console.log(`Попытка ${i + 1}/10`);
 
@@ -360,18 +360,30 @@ app.get('/api/parser', async (req, res) => {
                 break;
             }
         }
-        const h2Elements = await page.evaluate(() => {
-            const elements = document.querySelectorAll('h2.ctypography.ctypography--regular.ctypography--no-padding.ctypography__body.tmultiline.tmultiline-3.t-color-black');
+        const html = await page.content();
+        const $ = cheerio.load(html);
+        const events = [];
 
-            return Array.from(elements).map((h2, index) => {
-                return {
-                    id: index + 1,
-                    text: h2.textContent.trim(),
-                    html: h2.innerHTML,
-                    outerHTML: h2.outerHTML
-                };
+// Используем более простые селекторы
+        $('.ceventcard').each((index, element) => {
+            const $el = $(element);
+
+            // Простой селектор для заголовка
+            const title = $el.find('.ctypography__body').text().trim();
+            const time = $el.find('.ctypography.ctypography--no-padding.ctypography__small.ceventcard__date').text().trim();
+            const place = $el.find('.ctypography.ctypography--no-padding.ctypography--no-wrap.ctypography__small.t-color-gray-50').text().trim();
+            // Или ищем по атрибутам
+            // const title = $el.find('[class*="tmultiline"]').text().trim();
+
+            events.push({
+                title: title,
+                time,
+                place,
+                // Добавьте другие поля
+                link: $el.find('a').attr('href')
             });
         });
+
         // for (let i = 0; i < 2; i++) {
         //     await page.waitForSelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4', {
         //         timeout: 30000
@@ -386,8 +398,8 @@ app.get('/api/parser', async (req, res) => {
         res.json({
             success: true,
             // button: button,
-            elementsCount: h2Elements.length,
-            elements: h2Elements
+            elementsCount: events.length,
+            elements: events
         });
 
     } catch (error) {
