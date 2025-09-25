@@ -271,7 +271,7 @@ async function startServer() {
     // const httpsServer = https.createServer(sslOptions, app);
     //
     // httpsServer.listen(PORT, () => {
-    //     console.log(`TTPS сервер запущен на https://localhost:${PORT}`);
+    //     console.log(`TTPS сервер запущен на https://localhost:${PORT}`);1
     // });
 
     app.listen(PORT || 30000)
