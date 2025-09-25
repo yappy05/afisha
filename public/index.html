@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Афиша мероприятий</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 20px; color: #333; }
+        .btn {
+            padding: 15px 30px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .loading { text-align: center; padding: 20px; }
+        .error { background: #ffebee; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .event {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .event h3 { color: #333; margin-bottom: 10px; }
+        .event .meta { color: #666; font-size: 14px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎭 Афиша мероприятий</h1>
+
+    <button class="btn" onclick="getLocation()">
+        📍 Показать афишу моего города
+    </button>
+    <div style="margin: 10px 0;"></div>
+    <button class="btn btn-secondary" onclick="showCitySelection()">
+        🏙️ Выбрать город
+    </button>
+
+
+    <div id="loading" class="loading" style="display: none;">
+        Загружаем события...
+    </div>
+
+    <div id="results"></div>
+</div>
+
+<script>
+
+    function showCitySelection() {
+        const results = document.getElementById('results');
+
+        results.innerHTML = `
+        <div style="text-align: center; margin: 20px 0;">
+            <h3>Выберите город:</h3>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn" onclick="loadAfisha('Москва')" style="flex: 1;">
+                    Москва
+                </button>
+                <button class="btn" onclick="loadAfisha('Санкт-Петербург')" style="flex: 1;">
+                    Санкт-Петербург
+                </button>
+            </div>
+        </div>
+    `;
+    }
+
+    async function getLocation() {
+        const btn = document.querySelector('.btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        btn.disabled = true;
+        loading.style.display = 'block';
+        results.innerHTML = '';
+
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    timeout: 10000
+                });
+            });
+            const city = await defineCity(position.coords);
+            console.log('coordinates are:', position.coords)
+            console.log('city is:', city)
+
+            await loadAfisha(city);
+
+        } catch (error) {
+            results.innerHTML = `
+                    <div class="error">
+                        Ошибка: ${error.message}
+                        <br><br>
+                        <button class="btn" onclick="loadAfisha('Москва')">
+                            Показать афишу Москвы
+                        </button>
+                        <div style="margin: 10px 0;"></div>
+                        <button class="btn" onclick="loadAfisha('Санкт-Петербург')">
+                            Показать афишу Санкт-Петербурга
+                    </div>
+                `;
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+
+
+    async function defineCity(coords) {
+        const moscow = { lat: 55.7558, lng: 37.6173, radius: 1 };
+        const spb = { lat: 59.9343, lng: 30.3351, radius: 1 };
+
+        const distanceToMoscow = getDistance(coords.latitude, coords.longitude, moscow.lat, moscow.lng);
+        const distanceToSpb = getDistance(coords.latitude, coords.longitude, spb.lat, spb.lng);
+
+        if (distanceToMoscow <= moscow.radius) return 'москва';
+        if (distanceToSpb <= spb.radius) return 'санкт-петербург';
+
+        throw new Error('Определен регион вне Москвы или Петербурга');
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lon1 - lon2, 2));
+    }
+
+    async function loadAfisha(city) {
+        const results = document.getElementById('results');
+
+        try {
+            const response = await fetch(`/api/afisha?city=${encodeURIComponent(city)}`);
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error);
+
+            if (data.events.length === 0) {
+                results.innerHTML = '<p>На сегодня мероприятий не найдено</p>';
+                return;
+            }
+
+            results.innerHTML = `
+                    <h2>🎪 Афиша: ${data.city}</h2>
+                    ${data.events.map(event => `
+                        <div class="event">
+                            <h3>${event.title}</h3>
+                            <div class="meta">📅 ${event.date}</div>
+                            <div class="meta">📍 ${event.place}</div>
+                            <p>${event.description}</p>
+                        </div>
+                    `).join('')}
+                `;
+
+        } catch (error) {
+            results.innerHTML = `<div class="error">❌ Ошибка загрузки: ${error.message}</div>`;
+        }
+    }
+</script>
+</body>
+</html>
