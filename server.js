@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const https = require('https');
 const fs = require('fs');
 const cors = require('cors')
+const puppeteer = require('puppeteer')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -258,6 +259,76 @@ app.get('/', (req, res) => {
 app.get('/api/test', (req, res) => {
     res.json({message: 'Сервер работает!!', timestamp: new Date()})
 })
+
+app.get('/api/parser', async (req, res) => {
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas'
+            ]
+        });
+
+        const page = await browser.newPage();
+
+        // Устанавливаем реалистичные таймауты
+        await page.setDefaultNavigationTimeout(30000);
+        await page.setDefaultTimeout(10000);
+
+        // Блокируем ненужные ресурсы для ускорения
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            // Блокируем изображения, стили, шрифты для скорости
+            if (['image', 'stylesheet', 'font'].includes(request.resourceType())) {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
+
+        const url = 'https://afisha.timepad.ru/saint-petersburg/events';
+        console.log('Пытаемся загрузить:', url);
+
+        // Пробуем более простое ожидание
+        await page.goto(url, {
+            waitUntil: 'domcontentloaded', // Быстрее чем networkidle
+            timeout: 20000
+        });
+
+        console.log('Страница загружена, ищем элемент...');
+
+        // Ждем элемент с коротким таймаутом
+        try {
+            await page.waitForSelector('.lpage.lflexchild--stretched', {
+                timeout: 5000
+            });
+        } catch (e) {
+            console.log('Элемент не найден, но продолжаем...');
+        }
+
+        // Все равно пытаемся получить элемент
+        const divContent = await page.evaluate(() => {
+            const div = document.querySelector('.lpage.lflexchild--stretched');
+            return div ? div.outerHTML : 'Элемент не найден, но страница загружена';
+        });
+
+        await browser.close();
+
+        res.json({
+            success: true,
+            content: divContent
+        });
+
+    } catch (error) {
+        console.error('Ошибка:', error.message);
+        if (browser) await browser.close();
+        res.status(500).json({ error: error.message });
+    }
+});
 
 async function startServer() {
     await connectMongo();
