@@ -290,7 +290,7 @@ app.get('/api/parser', async (req, res) => {
             }
         });
 
-        const url = 'https://afisha.timepad.ru/saint-petersburg/events?date=2025-09-25T20%3A21%3A53%2B03%3A00%2C2025-09-25T23%3A59%3A59%2B03%3A00';
+        const url = 'https://afisha.timepad.ru/saint-petersburg/events?date=2025-09-27T00%3A00%3A00%2B03%3A00%2C2025-09-27T23%3A59%3A59%2B03%3A00';
         console.log('Пытаемся загрузить:', url);
 
         // Пробуем более простое ожидание
@@ -319,6 +319,47 @@ app.get('/api/parser', async (req, res) => {
             console.log('H2 элементы не найдены за 5 секунд, продолжаем...');
         }
 
+
+
+        // Все равно пытаемся получить элемент
+        // const button = await page.evaluate(() => {
+        //     const div = document.querySelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
+        //     return div ? div.outerHTML : 'Элемент не найден, но страница загружена';
+        // });
+        for (let i = 0; i < 10; i++) {
+            try {
+                console.log(`Попытка ${i + 1}/10`);
+
+                // Ищем кнопку
+                const button = await page.$('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
+
+                if (!button) {
+                    console.log('Кнопка не найдена, завершаем');
+                    break;
+                }
+
+                // Проверяем что кнопка кликабельна
+                const isClickable = await button.evaluate(btn => {
+                    return btn.offsetParent !== null && !btn.disabled;
+                });
+
+                if (!isClickable) {
+                    console.log('Кнопка не кликабельна, завершаем');
+                    break;
+                }
+
+                // Нажимаем
+                await button.click();
+                console.log(`Нажатие ${i + 1} успешно`);
+
+                // Ждем обновления
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+            } catch (e) {
+                console.log('Ошибка:', e.message);
+                break;
+            }
+        }
         const h2Elements = await page.evaluate(() => {
             const elements = document.querySelectorAll('h2.ctypography.ctypography--regular.ctypography--no-padding.ctypography__body.tmultiline.tmultiline-3.t-color-black');
 
@@ -331,19 +372,20 @@ app.get('/api/parser', async (req, res) => {
                 };
             });
         });
-
-        // Все равно пытаемся получить элемент
-        const button = await page.evaluate(() => {
-            const div = document.querySelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
-            return div ? div.outerHTML : 'Элемент не найден, но страница загружена';
-        });
+        // for (let i = 0; i < 2; i++) {
+        //     await page.waitForSelector('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4', {
+        //         timeout: 30000
+        //     });
+        //     await page.waitForTimeout(60000);
+        //     console.log(`Успешное нажатие ${clickCount}`);
+        // }
         // await page.click('.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4');
 
         await browser.close();
 
         res.json({
             success: true,
-            button: button,
+            // button: button,
             elementsCount: h2Elements.length,
             elements: h2Elements
         });
