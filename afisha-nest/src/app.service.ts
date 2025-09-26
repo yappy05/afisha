@@ -1,14 +1,11 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Event, EventDocument } from './common/lib/shemas/event.shema';
 import { Model } from 'mongoose';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { ParseRequestDto } from './common/lib/dto/parse.request.dto';
 import Redis from 'ioredis';
 import { testRedisConnection } from './common/lib/dbConnectionTests/redis.test.connection';
 import { testMongoConnection } from './common/lib/dbConnectionTests/mongo.test.connection';
-import * as puppeteer from 'puppeteer';
-import * as cheerio from 'cheerio';
 import { ParsingService } from './parsing/parsing.service';
 
 @Injectable()
@@ -55,8 +52,22 @@ export class AppService {
 
     console.log('❌ данные не найдены');
     console.log('спарсим новые данные');
-    const response = await this.parsingService.parseYandexAfisha(dto);
-    console.log(response);
-    return response;
+    const eventsResponse: Event[] =
+      await this.parsingService.parseYandexAfisha(dto);
+    try {
+      await this.redis.setex(
+        cacheKey,
+        CACHE_TTL,
+        JSON.stringify(eventsResponse),
+      );
+    } catch (e) {
+      console.error('не удалось сохранить в редис новые данные', e);
+    }
+    try {
+      await this.eventModel.insertMany(eventsResponse);
+    } catch (e) {
+      console.error('не удалось сохранить в монго новые данные', e);
+    }
+    return eventsResponse
   }
 }

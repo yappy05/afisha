@@ -2,13 +2,8 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { ParseRequestDto } from '../common/lib/dto/parse.request.dto';
-
-export interface ParsedEvent {
-  title: string;
-  time: string;
-  place: string;
-  link?: string;
-}
+import { Event } from '../common/lib/shemas/event.shema';
+import { Category } from '../common/lib/enums/category.enum';
 
 @Injectable()
 export class ParsingService implements OnModuleDestroy {
@@ -39,11 +34,10 @@ export class ParsingService implements OnModuleDestroy {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async parseYandexAfisha(dto: ParseRequestDto): Promise<ParsedEvent[]> {
+  async parseYandexAfisha(dto: ParseRequestDto): Promise<Event[]> {
     const { city, category, formattedDate } = dto;
     let browser: puppeteer.Browser | null = null;
     let page: puppeteer.Page | null = null;
-
     try {
       browser = await this.getBrowser();
       page = await browser.newPage();
@@ -52,18 +46,18 @@ export class ParsingService implements OnModuleDestroy {
       await page.setDefaultTimeout(40000);
 
       const url =
-        category === 'events'
+        category === Category.ALL
           ? `https://afisha.timepad.ru/${city}/events?date=${formattedDate}`
           : `https://afisha.timepad.ru/${city}/categories/${category}?date=${formattedDate}`;
 
       console.log('🔄 Парсим URL:', url);
 
       await page.goto(url, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'domcontentloaded',
         timeout: 60000,
       });
 
-      console.log('✅ Страница загружена');
+      console.log('Страница загружена');
       await this.delay(3000);
 
       // Кликаем по кнопке "Показать еще"
@@ -89,7 +83,7 @@ export class ParsingService implements OnModuleDestroy {
       }
 
       const html = await page.content();
-      return this.parseEventsWithCheerio(html);
+      return this.parseEventsWithCheerio(html, dto);
     } catch (error) {
       console.error('❌ Ошибка парсинга:', error.message);
       return this.getFallbackEvents(city);
@@ -98,9 +92,10 @@ export class ParsingService implements OnModuleDestroy {
     }
   }
 
-  private parseEventsWithCheerio(html: string): ParsedEvent[] {
+  private parseEventsWithCheerio(html: string, dto: ParseRequestDto): Event[] {
+    const { city, category, formattedDate } = dto;
     const $ = cheerio.load(html);
-    const events: ParsedEvent[] = [];
+    const events: Event[] = [];
 
     $('.ceventcard').each((index, element) => {
       const $el = $(element);
@@ -112,10 +107,13 @@ export class ParsingService implements OnModuleDestroy {
 
       if (title && time) {
         events.push({
+          city,
+          category: category ?? 'all',
+          formattedDate,
           title,
           time,
           place,
-          link: link ? `https://afisha.timepad.ru${link}` : undefined,
+          link: `https://afisha.timepad.ru${link}`,
         });
       }
     });
@@ -124,7 +122,7 @@ export class ParsingService implements OnModuleDestroy {
     return events;
   }
 
-  private getFallbackEvents(city: string): ParsedEvent[] {
+  private getFallbackEvents(city: string): Event[] {
     console.log('🔄 Используем fallback данные');
 
     return [
@@ -132,11 +130,19 @@ export class ParsingService implements OnModuleDestroy {
         title: `Концерт в ${city}`,
         time: 'Сегодня, 19:00',
         place: 'Главный концертный зал',
+        category: '',
+        city: '',
+        formattedDate: '',
+        link: '',
       },
       {
         title: `Выставка в ${city}`,
         time: 'Завтра, 12:00',
         place: 'Центральный выставочный зал',
+        category: '',
+        city: '',
+        formattedDate: '',
+        link: '',
       },
     ];
   }
