@@ -393,6 +393,9 @@ app.get('/api/test', (req, res) => {
 
 app.post('/api/parser', async (req, res) => {
     const { city, category, formattedDate } = req.body;
+    console.log(city)
+    console.log(category)
+    console.log(formattedDate)
     const result = await getAfishaWithCache(city, category, formattedDate)
     return res.json(result)
 });
