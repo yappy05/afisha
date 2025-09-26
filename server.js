@@ -260,8 +260,12 @@ app.get('/api/test', (req, res) => {
     res.json({message: 'Сервер работает!!', timestamp: new Date()})
 })
 
-app.get('/api/parser', async (req, res) => {
+app.post('/api/parser', async (req, res) => {
+    const { city, category } = req.body;
+    const { date } = req.query;
+    console.log(city)
     let browser;
+    console.log(req.city)
     try {
         browser = await puppeteer.launch({
             headless: true,
@@ -290,7 +294,7 @@ app.get('/api/parser', async (req, res) => {
             }
         });
 
-        const url = 'https://afisha.timepad.ru/saint-petersburg/events?date=2025-09-27T00%3A00%3A00%2B03%3A00%2C2025-09-27T23%3A59%3A59%2B03%3A00';
+        const url = 'https://afisha.timepad.ru/moscow/categories/sport?date=2025-09-26T00%3A00%3A00%2B03%3A00%2C2025-09-26T23%3A59%3A59%2B03%3A00';
         console.log('Пытаемся загрузить:', url);
 
         // Пробуем более простое ожидание

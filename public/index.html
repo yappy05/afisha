@@ -24,6 +24,9 @@
             width: 100%;
         }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-secondary {
+            background: #757575;
+        }
         .loading { text-align: center; padding: 20px; }
         .error { background: #ffebee; padding: 15px; border-radius: 8px; margin: 10px 0; }
         .event {
@@ -35,6 +38,53 @@
         }
         .event h3 { color: #333; margin-bottom: 10px; }
         .event .meta { color: #666; font-size: 14px; margin: 5px 0; }
+        .filters {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .category-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .category-btn {
+            padding: 8px 15px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .category-btn.active {
+            background: #2196F3;
+            color: white;
+        }
+        .date-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+        .apply-filters {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -49,6 +99,22 @@
         🏙️ Выбрать город
     </button>
 
+    <div class="filters" id="filters" style="display: none;">
+        <div class="filter-group">
+            <label>Категории:</label>
+            <div class="category-buttons">
+                <button class="category-btn active" data-category="all">Все</button>
+                <button class="category-btn" data-category="sport">Спорт</button>
+                <button class="category-btn" data-category="koncerty">Концерты</button>
+                <button class="category-btn" data-category="teatry">Театры</button>
+            </div>
+        </div>
+        <div class="filter-group">
+            <label>Дата:</label>
+            <input type="date" id="selected-date" class="date-input">
+        </div>
+        <button class="apply-filters" onclick="applyFilters()">Применить фильтры</button>
+    </div>
 
     <div id="loading" class="loading" style="display: none;">
         Загружаем события...
@@ -58,33 +124,90 @@
 </div>
 
 <script>
+    let currentCity = '';
+    let currentCategory = 'all';
+    let currentDate = '';
 
     function showCitySelection() {
         const results = document.getElementById('results');
+        const filters = document.getElementById('filters');
 
         results.innerHTML = `
         <div style="text-align: center; margin: 20px 0;">
             <h3>Выберите город:</h3>
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button class="btn" onclick="loadAfisha('Москва')" style="flex: 1;">
+                <button class="btn" onclick="selectCity('Москва')" style="flex: 1;">
                     Москва
                 </button>
-                <button class="btn" onclick="loadAfisha('Санкт-Петербург')" style="flex: 1;">
+                <button class="btn" onclick="selectCity('Санкт-Петербург')" style="flex: 1;">
                     Санкт-Петербург
                 </button>
             </div>
         </div>
     `;
+
+        filters.style.display = 'none';
+    }
+
+    function selectCity(city) {
+        currentCity = city;
+        const filters = document.getElementById('filters');
+        filters.style.display = 'block';
+
+        // Устанавливаем сегодняшнюю дату по умолчанию
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('selected-date').value = today;
+        currentDate = today;
+
+        resetFilters();
+        loadAfishaWithFilters();
+    }
+
+    function resetFilters() {
+        currentCategory = 'all';
+
+        // Сброс UI категорий
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector('.category-btn[data-category="all"]').classList.add('active');
+    }
+
+    function initCategoryButtons() {
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentCategory = this.getAttribute('data-category');
+                // При смене категории сразу применяем фильтры
+                loadAfishaWithFilters();
+            });
+        });
+    }
+
+    function applyFilters() {
+        currentDate = document.getElementById('selected-date').value;
+        loadAfishaWithFilters();
+    }
+
+    function loadAfishaWithFilters() {
+        if (!currentCity) {
+            alert('Сначала выберите город');
+            return;
+        }
+        loadAfisha(currentCity, currentCategory, currentDate);
     }
 
     async function getLocation() {
         const btn = document.querySelector('.btn');
         const loading = document.getElementById('loading');
         const results = document.getElementById('results');
+        const filters = document.getElementById('filters');
 
         btn.disabled = true;
         loading.style.display = 'block';
         results.innerHTML = '';
+        filters.style.display = 'none';
 
         try {
             const position = await new Promise((resolve, reject) => {
@@ -93,22 +216,29 @@
                 });
             });
             const city = await defineCity(position.coords);
-            console.log('coordinates are:', position.coords)
-            console.log('city is:', city)
+            currentCity = city;
+            filters.style.display = 'block';
 
-            await loadAfisha(city);
+            // Устанавливаем сегодняшнюю дату по умолчанию
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('selected-date').value = today;
+            currentDate = today;
+
+            resetFilters();
+            loadAfishaWithFilters();
 
         } catch (error) {
             results.innerHTML = `
                     <div class="error">
                         Ошибка: ${error.message}
                         <br><br>
-                        <button class="btn" onclick="loadAfisha('Москва')">
+                        <button class="btn" onclick="selectCity('Москва')">
                             Показать афишу Москвы
                         </button>
                         <div style="margin: 10px 0;"></div>
-                        <button class="btn" onclick="loadAfisha('Санкт-Петербург')">
+                        <button class="btn" onclick="selectCity('Санкт-Петербург')">
                             Показать афишу Санкт-Петербурга
+                        </button>
                     </div>
                 `;
         } finally {
@@ -116,7 +246,6 @@
             loading.style.display = 'none';
         }
     }
-
 
     async function defineCity(coords) {
         const moscow = { lat: 55.7558, lng: 37.6173, radius: 1 };
@@ -135,27 +264,95 @@
         return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lon1 - lon2, 2));
     }
 
-    async function loadAfisha(city) {
+    function formatDateForAPI(dateString) {
+        if (!dateString) return '';
+
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        const startOfDay = `${year}-${month}-${day}T00:00:00+03:00`;
+        const endOfDay = `${year}-${month}-${day}T23:59:59+03:00`;
+
+        return `${startOfDay},${endOfDay}`;
+    }
+
+    function getCitySlug(city) {
+        const citySlugs = {
+            'Москва': 'moscow',
+            'москва': 'moscow',
+            'Санкт-Петербург': 'saint-petersburg',
+            'санкт-петербург': 'saint-petersburg'
+        };
+        return citySlugs[city] || city.toLowerCase();
+    }
+
+    function getCategorySlug(category) {
+        const categorySlugs = {
+            'all': 'events', // Все -> events
+            'sport': 'sport',
+            'koncerty': 'koncerty',
+            'teatry': 'teatry'
+        };
+        return categorySlugs[category] || 'events';
+    }
+
+    async function loadAfisha(city, category = 'all', date = '') {
         const results = document.getElementById('results');
+        const loading = document.getElementById('loading');
+
+        loading.style.display = 'block';
+        results.innerHTML = '';
 
         try {
-            const response = await fetch(`/api/afisha?city=${encodeURIComponent(city)}`);
+            const citySlug = getCitySlug(city);
+            const categorySlug = getCategorySlug(category);
+
+            // Формируем URL: /город/категория?date=...
+            let url = `http://localhost:3000/api/parser/${citySlug}/`;
+            if (categorySlug === 'events') {
+                url+= `events`
+            } else {
+                url += `categories/${categorySlug}`
+            }
+
+            // Если дата не выбрана, используем сегодняшнюю
+            let selectedDate = date;
+            if (!selectedDate) {
+                selectedDate = new Date().toISOString().split('T')[0];
+            }
+
+            const formattedDate = formatDateForAPI(selectedDate);
+            if (formattedDate) {
+                const encodedDate = encodeURIComponent(formattedDate)
+                    .replace(/:/g, '%3A')
+                    .replace(/\+/g, '%2B');
+                url += `?date=${encodedDate}`;
+            }
+
+            console.log('Request URL:', url);
+
+            const response = await fetch(url);
             const data = await response.json();
 
             if (!response.ok) throw new Error(data.error);
 
             if (data.events.length === 0) {
-                results.innerHTML = '<p>На сегодня мероприятий не найдено</p>';
+                results.innerHTML = '<p>По вашему запросу мероприятий не найдено</p>';
                 return;
             }
 
             results.innerHTML = `
                     <h2>🎪 Афиша: ${data.city}</h2>
+                    ${selectedDate ? `<p style="margin-bottom: 15px; color: #666;">На дату: ${new Date(selectedDate).toLocaleDateString('ru-RU')}</p>` : ''}
+                    ${category && category !== 'all' ? `<p style="margin-bottom: 15px; color: #666;">Категория: ${getCategoryName(category)}</p>` : ''}
                     ${data.events.map(event => `
                         <div class="event">
                             <h3>${event.title}</h3>
                             <div class="meta">📅 ${event.date}</div>
                             <div class="meta">📍 ${event.place}</div>
+                            <div class="meta">🏷️ ${event.category || 'Не указана'}</div>
                             <p>${event.description}</p>
                         </div>
                     `).join('')}
@@ -163,8 +360,29 @@
 
         } catch (error) {
             results.innerHTML = `<div class="error">Ошибка загрузки: ${error.message}</div>`;
+        } finally {
+            loading.style.display = 'none';
         }
     }
+
+    function getCategoryName(categorySlug) {
+        const categoryNames = {
+            'all': 'Все',
+            'sport': 'Спорт',
+            'koncerty': 'Концерты',
+            'teatry': 'Театры'
+        };
+        return categoryNames[categorySlug] || categorySlug;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initCategoryButtons();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('selected-date').min = today;
+        // Устанавливаем сегодняшнюю дату по умолчанию
+        document.getElementById('selected-date').value = today;
+        currentDate = today;
+    });
 </script>
 </body>
 </html>
