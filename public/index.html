@@ -378,7 +378,7 @@
                     <h2>🎪 Афиша: ${data.city}</h2>
                     ${selectedDate ? `<p style="margin-bottom: 15px; color: #666;">На дату: ${new Date(selectedDate).toLocaleDateString('ru-RU')}</p>` : ''}
                     ${category && category !== 'all' ? `<p style="margin-bottom: 15px; color: #666;">Категория: ${getCategoryName(category)}</p>` : ''}
-                    ${data.elements.map(event => `
+                    ${data.map(event => `
                         <div class="event">
                             <h3>${event.title}</h3>
                             <div class="meta">📅 ${event.time}</div>
