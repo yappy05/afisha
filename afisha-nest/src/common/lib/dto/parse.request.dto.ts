@@ -1,13 +1,7 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsEnum,
-  Matches,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsEnum, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { City } from '../enums/city.enum';
 import { Category } from '../enums/category.enum';
-
 
 export class ParseRequestDto {
   @ApiProperty({
