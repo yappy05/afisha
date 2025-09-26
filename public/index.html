@@ -124,6 +124,7 @@
 </div>
 
 <script>
+
     let currentCity = '';
     let currentCategory = 'all';
     let currentDate = '';
@@ -283,7 +284,9 @@
             'Москва': 'moscow',
             'москва': 'moscow',
             'Санкт-Петербург': 'saint-petersburg',
-            'санкт-петербург': 'saint-petersburg'
+            'санкт-петербург': 'saint-petersburg',
+            'спб': 'saint-petersburg',
+            'питер': 'saint-petersburg'
         };
         return citySlugs[city] || city.toLowerCase();
     }
@@ -310,12 +313,12 @@
             const categorySlug = getCategorySlug(category);
 
             // Формируем URL: /город/категория?date=...
-            let url = `http://localhost:3000/api/parser/${citySlug}/`;
-            if (categorySlug === 'events') {
-                url+= `events`
-            } else {
-                url += `categories/${categorySlug}`
-            }
+            let url = `http://localhost:3000/api/parser`;
+            // if (categorySlug === 'events') {
+            //     url+= `events`
+            // } else {
+            //     url += `categories/${categorySlug}`
+            // }
 
             // Если дата не выбрана, используем сегодняшнюю
             let selectedDate = date;
@@ -324,36 +327,64 @@
             }
 
             const formattedDate = formatDateForAPI(selectedDate);
-            if (formattedDate) {
-                const encodedDate = encodeURIComponent(formattedDate)
-                    .replace(/:/g, '%3A')
-                    .replace(/\+/g, '%2B');
-                url += `?date=${encodedDate}`;
-            }
+            const encoded = encodeURIComponent(formattedDate);
+            // let encodedDate = ''
+            // if (formattedDate) {
+            //    encodedDate = encodeURIComponent(formattedDate)
+            //         .replace(/:/g, '%3A')
+            //         .replace(/\+/g, '%2B');
+            // }
 
             console.log('Request URL:', url);
 
-            const response = await fetch(url);
-            const data = await response.json();
+            const requestBody = {
+                city: citySlug,
+                category: categorySlug,
+                formattedDate: encoded
+            };
 
-            if (!response.ok) throw new Error(data.error);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
 
-            if (data.events.length === 0) {
-                results.innerHTML = '<p>По вашему запросу мероприятий не найдено</p>';
-                return;
+// Проверяем статус ответа
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+// Парсим JSON из ответа
+            const data = await response.json();
+
+// Теперь работаем с данными
+            console.log('Response data:', data);
+            console.log('Success:', data.success);
+            console.log('Elements count:', data.elementsCount);
+            console.log('Elements:', data.elements);
+
+            // const data = await response.json();
+            //
+            // if (!response.ok) throw new Error(data.error);
+            //
+            // if (data.events.length === 0) {
+            //     results.innerHTML = '<p>По вашему запросу мероприятий не найдено</p>';
+            //     return;
+            // }
+            //
             results.innerHTML = `
                     <h2>🎪 Афиша: ${data.city}</h2>
                     ${selectedDate ? `<p style="margin-bottom: 15px; color: #666;">На дату: ${new Date(selectedDate).toLocaleDateString('ru-RU')}</p>` : ''}
                     ${category && category !== 'all' ? `<p style="margin-bottom: 15px; color: #666;">Категория: ${getCategoryName(category)}</p>` : ''}
-                    ${data.events.map(event => `
+                    ${data.elements.map(event => `
                         <div class="event">
                             <h3>${event.title}</h3>
-                            <div class="meta">📅 ${event.date}</div>
+                            <div class="meta">📅 ${event.time}</div>
                             <div class="meta">📍 ${event.place}</div>
-                            <div class="meta">🏷️ ${event.category || 'Не указана'}</div>
-                            <p>${event.description}</p>
+                            <div class="meta">🏷️ ${event.link || 'Не указана'}</div>
+                            // <p>${event.description}</p>
                         </div>
                     `).join('')}
                 `;

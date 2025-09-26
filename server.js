@@ -261,9 +261,10 @@ app.get('/api/test', (req, res) => {
 })
 
 app.post('/api/parser', async (req, res) => {
-    const { city, category } = req.body;
-    const { date } = req.query;
+    const { city, category, formattedDate } = req.body;
     console.log(city)
+    console.log(category)
+    console.log(formattedDate)
     let browser;
     console.log(req.city)
     try {
@@ -294,8 +295,15 @@ app.post('/api/parser', async (req, res) => {
             }
         });
 
-        const url = 'https://afisha.timepad.ru/moscow/categories/sport?date=2025-09-26T00%3A00%3A00%2B03%3A00%2C2025-09-26T23%3A59%3A59%2B03%3A00';
-        console.log('Пытаемся загрузить:', url);
+        let url = ''
+        if (category === 'events') {
+            url = `https://afisha.timepad.ru/${city}/events?date=${formattedDate}`
+        } else {
+            url = `https://afisha.timepad.ru/${city}/categories/${category}?date=${formattedDate}`
+        }
+
+        // const url = 'https://afisha.timepad.ru/moscow/categories/sport?date=2025-09-26T00%3A00%3A00%2B03%3A00%2C2025-09-26T23%3A59%3A59%2B03%3A00';
+        // console.log('Пытаемся загрузить:', url);
 
         // Пробуем более простое ожидание
         await page.goto(url, {
