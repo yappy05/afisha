@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "parsing-afisha.BRUNO-API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
