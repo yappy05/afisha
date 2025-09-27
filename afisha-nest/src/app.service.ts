@@ -21,8 +21,9 @@ export class AppService {
 
   public async getEvents(dto: ParseRequestDto) {
     const CACHE_TTL = 3600;
-    const { city, category, formattedDate } = dto;
-    const cacheKey = `afisha:${city}:${category}:${formattedDate}`;
+    const { city, category, date } = dto;
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const cacheKey = `afisha:${city}:${category}:${date}`;
     console.log('key is:', cacheKey);
 
     const cachedEvents = await this.redis.get(cacheKey);
@@ -37,7 +38,7 @@ export class AppService {
       .find({
         city,
         category,
-        formattedDate,
+        date,
       })
       .lean()
       .exec();
@@ -70,6 +71,6 @@ export class AppService {
         console.error('не удалось сохранить в монго новые данные', e);
       }
     }
-    return eventsResponse
+    return eventsResponse;
   }
 }

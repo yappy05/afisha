@@ -12,7 +12,7 @@ export class Event {
   category: string;
 
   @Prop()
-  formattedDate: string;
+  date: Date;
 
   @Prop()
   title: string;
