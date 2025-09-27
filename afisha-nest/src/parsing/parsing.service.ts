@@ -35,7 +35,7 @@ export class ParsingService implements OnModuleDestroy {
   }
 
   async parseYandexAfisha(dto: ParseRequestDto): Promise<Event[]> {
-    const { city, category, formattedDate } = dto;
+    const { city, category, formattedDate, delay, countPages } = dto;
     let browser: puppeteer.Browser | null = null;
     let page: puppeteer.Page | null = null;
     try {
@@ -57,11 +57,11 @@ export class ParsingService implements OnModuleDestroy {
         timeout: 60000,
       });
 
-      console.log('Страница загружена');
+      console.log('Страница загружена!');
       await this.delay(3000);
 
       // Кликаем по кнопке "Показать еще"
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < countPages; i++) {
         const buttonClicked = await page.evaluate(() => {
           const button = document.querySelector(
             '.cbtn.cbtn--variant_secondary.cbtn--fixed.cbtn--large.lmodules__4',
@@ -74,8 +74,8 @@ export class ParsingService implements OnModuleDestroy {
         });
 
         if (buttonClicked) {
-          console.log(`✅ Кнопка нажата (${i + 1}/5)`);
-          await this.delay(2000);
+          console.log(`✅ Кнопка нажата (${i + 1}/${countPages})`);
+          await this.delay(delay);
         } else {
           console.log('❌ Кнопка не найдена или не видима');
           break;
@@ -86,7 +86,7 @@ export class ParsingService implements OnModuleDestroy {
       return this.parseEventsWithCheerio(html, dto);
     } catch (error) {
       console.error('❌ Ошибка парсинга:', error.message);
-      return this.getFallbackEvents(city);
+      return [];
     } finally {
       if (page) await page.close();
     }
@@ -122,28 +122,4 @@ export class ParsingService implements OnModuleDestroy {
     return events;
   }
 
-  private getFallbackEvents(city: string): Event[] {
-    console.log('🔄 Используем fallback данные');
-
-    return [
-      {
-        title: `Концерт в ${city}`,
-        time: 'Сегодня, 19:00',
-        place: 'Главный концертный зал',
-        category: '',
-        city: '',
-        formattedDate: '',
-        link: '',
-      },
-      {
-        title: `Выставка в ${city}`,
-        time: 'Завтра, 12:00',
-        place: 'Центральный выставочный зал',
-        category: '',
-        city: '',
-        formattedDate: '',
-        link: '',
-      },
-    ];
-  }
 }

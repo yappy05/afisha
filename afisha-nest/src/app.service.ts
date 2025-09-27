@@ -54,19 +54,21 @@ export class AppService {
     console.log('спарсим новые данные');
     const eventsResponse: Event[] =
       await this.parsingService.parseYandexAfisha(dto);
-    try {
-      await this.redis.setex(
-        cacheKey,
-        CACHE_TTL,
-        JSON.stringify(eventsResponse),
-      );
-    } catch (e) {
-      console.error('не удалось сохранить в редис новые данные', e);
-    }
-    try {
-      await this.eventModel.insertMany(eventsResponse);
-    } catch (e) {
-      console.error('не удалось сохранить в монго новые данные', e);
+    if (eventsResponse.length > 0) {
+      try {
+        await this.redis.setex(
+          cacheKey,
+          CACHE_TTL,
+          JSON.stringify(eventsResponse),
+        );
+      } catch (e) {
+        console.error('не удалось сохранить в редис новые данные', e);
+      }
+      try {
+        await this.eventModel.insertMany(eventsResponse);
+      } catch (e) {
+        console.error('не удалось сохранить в монго новые данные', e);
+      }
     }
     return eventsResponse
   }

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsEnum, Matches } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  Matches,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { City } from '../enums/city.enum';
 import { Category } from '../enums/category.enum';
@@ -40,4 +46,23 @@ export class ParseRequestDto {
   )
   @IsNotEmpty({ message: 'Дата обязательна' })
   readonly formattedDate: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Зависит от интернета, лучше оставить 2000. Если инетрнет хороший то для скорости можно снизить до 1000',
+    default: 2000,
+    example: 3000,
+  })
+  @IsOptional()
+  @IsNumber()
+  readonly delay: number = 2000;
+
+  @ApiPropertyOptional({
+    description: 'Количество страниц для парсинга',
+    default: 3,
+    example: 5,
+  })
+  @IsOptional()
+  @IsNumber()
+  readonly countPages: number = 3;
 }
