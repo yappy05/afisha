@@ -4,6 +4,7 @@ import * as cheerio from 'cheerio';
 import { ParseRequestDto } from '../common/lib/dto/parse.request.dto';
 import { Event } from '../common/lib/shemas/event.shema';
 import { Category } from '../common/lib/enums/category.enum';
+import { createDayRangeString } from '../common/lib/utils/createDayRangeString';
 
 @Injectable()
 export class ParsingService implements OnModuleDestroy {
@@ -35,9 +36,12 @@ export class ParsingService implements OnModuleDestroy {
   }
 
   async parseYandexAfisha(dto: ParseRequestDto): Promise<Event[]> {
-    const { city, category, formattedDate, delay, countPages } = dto;
+    const { city, category, date, delay, countPages } = dto;
     let browser: puppeteer.Browser | null = null;
     let page: puppeteer.Page | null = null;
+
+    const dateRangeString = createDayRangeString(date);
+
     try {
       browser = await this.getBrowser();
       page = await browser.newPage();
@@ -47,8 +51,8 @@ export class ParsingService implements OnModuleDestroy {
 
       const url =
         category === Category.ALL
-          ? `https://afisha.timepad.ru/${city}/events?date=${formattedDate}`
-          : `https://afisha.timepad.ru/${city}/categories/${category}?date=${formattedDate}`;
+          ? `https://afisha.timepad.ru/${city}/events?date=${dateRangeString}`
+          : `https://afisha.timepad.ru/${city}/categories/${category}?date=${dateRangeString}`;
 
       console.log('🔄 Парсим URL:', url);
 
@@ -93,7 +97,7 @@ export class ParsingService implements OnModuleDestroy {
   }
 
   private parseEventsWithCheerio(html: string, dto: ParseRequestDto): Event[] {
-    const { city, category, formattedDate } = dto;
+    const { city, category, date } = dto;
     const $ = cheerio.load(html);
     const events: Event[] = [];
 
@@ -109,7 +113,7 @@ export class ParsingService implements OnModuleDestroy {
         events.push({
           city,
           category: category ?? 'all',
-          formattedDate,
+          date,
           title,
           time,
           place,
@@ -121,5 +125,4 @@ export class ParsingService implements OnModuleDestroy {
     console.log(`✅ Найдено событий: ${events.length}`);
     return events;
   }
-
 }
