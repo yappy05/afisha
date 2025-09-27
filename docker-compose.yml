@@ -18,25 +18,25 @@ services:
       - mongo_data:/data/db
     networks:
       - my-app
-#
-#  user-service:
-#    build:
-#      context: ./afisha-nest
-#      dockerfile: Dockerfile
-#    ports:
-#      - "3000:3000"
-#    env_file:
-#      - .env
-#    depends_on:
-#      - redis
-#      - mongodb
-#    networks:
-#      - my-app
-#    dns:
-#      - 8.8.8.8
-#      - 1.1.1.1
-#    extra_hosts:
-#      - "host.docker.internal:host-gateway"
+
+  pasrsing-service:
+    build:
+      context: ./afisha-nest
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - my-app
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 
 volumes:
