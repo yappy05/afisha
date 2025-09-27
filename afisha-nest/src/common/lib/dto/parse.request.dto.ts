@@ -1,9 +1,9 @@
 import {
-  IsNotEmpty,
-  IsOptional,
   IsEnum,
-  Matches,
+  IsNotEmpty,
   IsNumber,
+  IsOptional,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { City } from '../enums/city.enum';
@@ -22,7 +22,8 @@ export class ParseRequestDto {
   readonly city: City;
 
   @ApiPropertyOptional({
-    description: 'Категория событий (опционально)',
+    description:
+      'Категория событий (опционально). Если не указать категорию то предет ответ со всеми событиями в этот день',
     enum: Category,
     example: Category.SPORT,
   })
@@ -30,7 +31,7 @@ export class ParseRequestDto {
     message: `Категория должна быть одной из: ${Object.values(Category).join(', ')}`,
   })
   @IsOptional()
-  readonly category?: Category;
+  readonly category?: Category = Category.ALL;
 
   @ApiProperty({
     description: 'Диапазон дат в формате Timepad',
