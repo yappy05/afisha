@@ -53,11 +53,11 @@ export class ParsingService implements OnModuleDestroy {
       console.log('🔄 Парсим URL:', url);
 
       await page.goto(url, {
-        waitUntil: 'domcontentloaded',
+        waitUntil: 'networkidle0',
         timeout: 60000,
       });
 
-      console.log('Страница загружена!');
+      console.log('Страница загружена!!');
       await this.delay(3000);
 
       // Кликаем по кнопке "Показать еще"
