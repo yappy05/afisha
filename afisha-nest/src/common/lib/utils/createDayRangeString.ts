@@ -1,4 +1,13 @@
-export const createDayRangeString = (date: Date): string => {
+export const createDayRangeString = (dateString: string): string => {
+  // Парсим дату из формата MM.DD.YY
+  const [month, day, year] = dateString.split('.').map(Number);
+
+  // Преобразуем год в полный формат (20YY)
+  const fullYear = 2000 + year;
+
+  // Создаем объект Date (месяц в JS начинается с 0, поэтому month - 1)
+  const date = new Date(fullYear, month - 1, day);
+
   // Создаем начало дня (00:00:00)
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
@@ -23,4 +32,4 @@ export const createDayRangeString = (date: Date): string => {
   const endFormatted = formatDate(endOfDay);
 
   return `${startFormatted}%2C${endFormatted}`;
-};
+}

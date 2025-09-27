@@ -37,16 +37,16 @@ export class ParseRequestDto {
   readonly category?: Category = Category.ALL;
 
   @IsNotEmpty({ message: 'Дата обязательна' })
-  @Matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}$/, {
-    message: 'Неверный формат даты. Используйте: YYYY-MM-DDTHH:mm:ss+HH:mm'
+  @Matches(/^\d{2}\.\d{2}\.\d{2}$/, {
+    message: 'Неверный формат даты. Используйте: MM.DD.YY',
   })
   @ApiProperty({
     description:
-      'Дата для поиска событий за весь день (с 00:00 до 23:59). Формат: YYYY-MM-DDTHH:mm:ss±HH:mm',
-    example: '2025-10-04T15:30:00+03:00',
+      'Дата для поиска событий за весь день (с 00:00 до 23:59). Формат: MM.DD.YY',
+    example: '09.28.25',
     type: String,
   })
-  readonly date: Date;
+  readonly date: string;
 
   @ApiPropertyOptional({
     description:

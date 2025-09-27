@@ -7,6 +7,7 @@ import Redis from 'ioredis';
 import { testRedisConnection } from './common/lib/dbConnectionTests/redis.test.connection';
 import { testMongoConnection } from './common/lib/dbConnectionTests/mongo.test.connection';
 import { ParsingService } from './parsing/parsing.service';
+import { createDayRangeString } from './common/lib/utils/createDayRangeString';
 
 @Injectable()
 export class AppService {
@@ -22,8 +23,9 @@ export class AppService {
   public async getEvents(dto: ParseRequestDto) {
     const CACHE_TTL = 3600;
     const { city, category, date } = dto;
+    const formatedData = createDayRangeString(date);
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    const cacheKey = `afisha:${city}:${category}:${date}`;
+    const cacheKey = `afisha:${city}:${category}:${formatedData}`;
     console.log('key is:', cacheKey);
 
     const cachedEvents = await this.redis.get(cacheKey);
