@@ -1,0 +1,24 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: ['master', 'main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: build
+        run: docker build afisha-nest -t helps198/afisha-timepad
+      - name: publish image
+        run: |
+          docker login -u helps198 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+          docker push helps198/afisha-timepad
+
+      - name: restart deployment
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+          KUBECONFIG=kubeconfig.yaml kubectl rollout restart deployment afisha-timepad.depl
+          rm kubeconfig.yaml

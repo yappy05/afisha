@@ -12,7 +12,7 @@ export class Event {
   category: string;
 
   @Prop()
-  date: Date;
+  date: string;
 
   @Prop()
   title: string;
