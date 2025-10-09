@@ -53,7 +53,7 @@ export class AppService {
     }
 
     console.log('❌ данные не найдены');
-    console.log('спарсим новые данные');
+    console.log('спарсим новые данные!');
     const eventsResponse: Event[] =
       await this.parsingService.parseYandexAfisha(dto);
     if (eventsResponse.length > 0) {
