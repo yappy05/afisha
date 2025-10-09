@@ -1,0 +1,24 @@
+meta {
+  name: fetch-events local
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://helps-it.ru/afisha-timepad.srv/api/parser
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "city": "moscow",
+    "date": "10.10.25",
+    "delay": 2000,
+    "countPages": 5
+  }
+}
+
+settings {
+  encodeUrl: true
+}
