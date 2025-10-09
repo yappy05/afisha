@@ -36,14 +36,13 @@ export class AppService {
       return JSON.parse(cachedEvents) as Event[];
     }
 
-    const events = await this.eventModel
-      .find({
-        city,
-        category,
-        date,
-      })
-      .lean()
-      .exec();
+    const query = {
+      city,
+      date,
+      category: category !== undefined ? category : { $exists: true },
+    };
+
+    const events = await this.eventModel.find(query).lean().exec();
 
     if (events && events.length > 0) {
       console.log('✅ данные взяты из Mongoose');

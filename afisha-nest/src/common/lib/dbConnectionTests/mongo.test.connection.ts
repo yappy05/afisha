@@ -18,8 +18,8 @@ export const testMongoConnection = async (eventModel: Model<EventDocument>) =>
     console.log('✅ Тестовый документ создан:', testDoc._id);
 
     // Удаляем тестовый документ
-    // await eventModel.findByIdAndDelete(testDoc._id);
-    // console.log('✅ Тестовый документ удален')
+    await eventModel.findByIdAndDelete(testDoc._id);
+    console.log('✅ Тестовый документ удален')
   } catch (error) {
     console.error('❌ Ошибка MongoDB:', error);
   }

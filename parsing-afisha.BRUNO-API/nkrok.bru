@@ -4,10 +4,20 @@ meta {
   seq: 2
 }
 
-get {
-  url: 
-  body: none
+post {
+  url: https://whackiest-freckly-lilliana.ngrok-free.dev/api/parser
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "city": "saint-petersburg",
+    "category": "teatry",
+    "date": "2025-09-28T15:30:00+03:00",
+    "delay": 2000,
+    "countPages": 5
+  }
 }
 
 settings {
