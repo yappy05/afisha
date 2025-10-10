@@ -46,7 +46,7 @@ export class ParsingService implements OnModuleDestroy {
       browser = await this.getBrowser();
       page = await browser.newPage();
 
-      await page.setDefaultNavigationTimeout(70000);
+      // await page.setDefaultNavigationTimeout(70000);
       await page.setDefaultTimeout(40000);
 
       const url =
@@ -58,7 +58,7 @@ export class ParsingService implements OnModuleDestroy {
 
       await page.goto(url, {
         waitUntil: 'networkidle0',
-        timeout: 60000,
+        timeout: 60000 * 5,
       });
 
       console.log('Страница загружена!!');
